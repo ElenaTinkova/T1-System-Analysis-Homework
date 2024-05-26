@@ -1,0 +1,270 @@
+openapi: 3.0.0
+info:
+  title: Bank API
+  description: API для управления банковскими счетами и пользователями
+  version: 1.0.0
+  contact:
+    name: Bank API Support
+    url: https://www.bank.com/support
+    email: support@bank.com
+servers:
+  - url: https://webinarOpenSchool.org/api/v1
+tags:
+  - name: Счета
+  - name: Пользователи
+  
+paths:
+  /account/{accountId}: ##camelCase, snake_case, kebab-case
+    get:
+      tags:
+        - Счета
+      summary: Получить информацию о банковском счете
+      description: Возращает информацию о конкретном банковском счете
+      parameters: 
+        - name: accountId
+          in: path #query
+          required: true
+          description: Уникальный идентификатор счета
+          schema: 
+            type: integer
+      responses:
+        '200':
+          description: ОК
+          content: 
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:
+                    type: integer
+                    description: Уникальный идентификатор счета
+                    example: 706983
+                  accountNumber: 
+                    type: string
+                    description: Номер счета
+                    example: "40702810000000000007"
+                  balance: 
+                    type: number
+                    format: double
+                    description: Текущий баланс счета
+                    example: 100.10
+                  status:
+                    type: string
+                    description: Статус счета
+                    example: "ACTIVE"
+                    enum:
+                      - ACTIVE
+                      - CLOSED
+                      - RESERVED
+        '400':
+          description: Плохой запрос
+        '401':
+          description: Не авторизован
+        '403':
+          description: Доступ запрещен
+        '404':
+          description: Не найдено
+        '500':
+          description: Сервер не доступен
+          
+    patch:
+      tags:
+        - Счета
+      summary: Обновить статус счета
+      parameters: 
+        - name: accountId
+          in: path
+          required: true
+          description: Уникальный идентификатор счета
+          example: 706983
+          schema: 
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accountStatusCode:
+                    type: integer
+                    description: Новый код статуса счета, где 0 – ACTIVE, 1 – CLOSED, 2 – RESERVED
+                    example: 0
+                    enum:
+                      - 0
+                      - 1
+                      - 2
+                accountType:
+                  type: string
+                  description: Тип счета
+                  example: "DEBET"
+      deprecated: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  edited:
+                    type: boolean
+                    example: true
+                  info:
+                      $ref: '#/components/schemas/AccountUpdate'
+          
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+        '500': 
+            description: Internal Server Error
+        '503':
+          description: Service Unavailable
+        
+      
+          
+  /accounts:
+    post:
+      tags: 
+        - Счета
+      summary: Создать новый счет 
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              $ref: '#/components/schemas/newAccount'
+      responses:
+        '201': 
+          description: Создано
+        '401':
+          description: Не авторизован
+        '403':
+          description: Доступ запрещен
+        '404':
+          description: Не найдено
+        '500':
+          description: Сервер не доступен
+  
+  /users/{userId}:
+    put:
+      tags:
+        - Пользователи
+      summary: Обновить информацию о пользователе
+      parameters:
+        - name: userId
+          in: path
+          description: Уникальное значение ID пользователя
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+            example:
+              name: "Alice Smith"
+              email: "alice@example.com"
+              age: 30
+      responses:
+        '200':
+          description: Успешный запрос
+        '401':
+          description: Не авторизован
+        '403':
+          description: Доступ запрещен
+        '404':
+          description: Данные не найдены
+        '500':
+          description: Сервер не доступен  
+    delete:
+      tags:
+        - Пользователи
+      summary: Удалить информацию о пользователе
+      parameters:
+        - name: userId
+          in: path
+          description: Уникальное значение ID пользователя, который будет удален
+          example: 234560
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204': 
+          description: No Content
+        '400': 
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+        '500': 
+          description: Internal Server Error
+        
+            
+components:
+  schemas:
+    newAccount:
+      type: object
+      properties:
+        accountType:
+          type: string
+          description: Тип счета
+          example: "DEBET"
+        balance:
+          type: number
+          description: Первоначальный баланс
+          example: 10000
+        firstName:
+          type: string
+          description: Фамилия владельца
+          example: "Свиридова"
+        middleName:
+          type: string
+          description: Отчество владельца
+          example: "Борисовна"
+        lastName:
+          type: string
+          description: Имя владельца
+          example: "Елена"
+      required:
+        - accountType
+        - firstName
+        - lastName
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Имя и фамилия пользователя
+        email:
+          type: string
+          description: Адрес электронной почты
+        age:
+          type: integer
+          description: Возраст
+    AccountUpdate:
+      type: object
+      properties:
+        newAccountStatus:
+          type: string
+          description: Новый актуальный статус счета
+          example: "CLOSED"
+          enum:
+            - ACTIVE
+            - CLOSED
+            - RESERVED
+        editedDate:
+          type: string
+          format: date
+          description: Дата изменения статуса
+          example: "2024-05-16"
+      required:
+        - newAccountStatus
+        - editedDate
+      
